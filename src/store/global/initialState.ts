@@ -47,20 +47,29 @@ export enum ProfileTabs {
 }
 
 export interface SystemStatus {
+  expandInputActionbar?: boolean;
   // which sessionGroup should expand
   expandSessionGroupKeys: string[];
   filePanelWidth: number;
+  hideGemini2_5FlashImagePreviewChineseWarning?: boolean;
   hidePWAInstaller?: boolean;
   hideThreadLimitAlert?: boolean;
   imagePanelWidth: number;
   imageTopicPanelWidth?: number;
-  inputHeight: number;
   /**
    * 应用初始化时不启用 PGLite，只有当用户手动开启时才启用
    */
   isEnablePglite?: boolean;
   isShowCredit?: boolean;
   language?: LocaleMode;
+  /**
+   * 记住用户最后选择的图像生成模型
+   */
+  lastSelectedImageModel?: string;
+  /**
+   * 记住用户最后选择的图像生成提供商
+   */
+  lastSelectedImageProvider?: string;
   latestChangelogId?: string;
   mobileShowPortal?: boolean;
   mobileShowTopic?: boolean;
@@ -78,7 +87,7 @@ export interface SystemStatus {
    * theme mode
    */
   themeMode?: ThemeMode;
-  threadInputHeight: number;
+  wideScreen?: boolean;
   zenMode?: boolean;
 }
 
@@ -106,13 +115,14 @@ export interface GlobalState {
 }
 
 export const INITIAL_STATUS = {
+  expandInputActionbar: true,
   expandSessionGroupKeys: [SessionDefaultGroup.Pinned, SessionDefaultGroup.Default],
   filePanelWidth: 320,
+  hideGemini2_5FlashImagePreviewChineseWarning: false,
   hidePWAInstaller: false,
   hideThreadLimitAlert: false,
   imagePanelWidth: 320,
   imageTopicPanelWidth: 80,
-  inputHeight: 200,
   mobileShowTopic: false,
   portalWidth: 400,
   sessionsWidth: 320,
@@ -125,7 +135,7 @@ export const INITIAL_STATUS = {
   showSystemRole: false,
   systemRoleExpandedMap: {},
   themeMode: 'auto',
-  threadInputHeight: 200,
+  wideScreen: true,
   zenMode: false,
 } satisfies SystemStatus;
 
