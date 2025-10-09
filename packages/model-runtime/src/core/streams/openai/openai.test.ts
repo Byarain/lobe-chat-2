@@ -360,14 +360,9 @@ describe('OpenAIStream', () => {
     }
 
     expect(chunks).toEqual(
-      [
-        'id: 1',
-        'event: text',
-        `data: "Hello"\n`,
-        'id: 1',
-        'event: data',
-        `data: {"id":"1"}\n`,
-      ].map((i) => `${i}\n`),
+      ['id: 1', 'event: text', `data: "Hello"\n`, 'id: 1', 'event: data', `data: {"id":"1"}\n`].map(
+        (i) => `${i}\n`,
+      ),
     );
   });
 
@@ -396,7 +391,7 @@ describe('OpenAIStream', () => {
     expect(chunks).toEqual([
       'id: first_chunk_error\n',
       'event: error\n',
-      `data: {"body":{"errorType":"ProviderBizError","message":"Test error"},"type":"ProviderBizError"}\n\n`,
+      `data: {"body":{"errorType":"ProviderBizError","message":"Test error"},"message":"Test error","type":"ProviderBizError"}\n\n`,
     ]);
   });
 
@@ -413,7 +408,9 @@ describe('OpenAIStream', () => {
 
     const protocolStream = OpenAIStream(mockOpenAIStream, {
       bizErrorTypeTransformer: () => AgentRuntimeErrorType.PermissionDenied,
-      provider: 'grok',
+      payload: {
+        provider: 'grok',
+      },
     });
 
     const decoder = new TextDecoder();
@@ -427,7 +424,7 @@ describe('OpenAIStream', () => {
     expect(chunks).toEqual([
       'id: first_chunk_error\n',
       'event: error\n',
-      `data: {"body":{"message":"Custom error","errorType":"PermissionDenied","provider":"grok"},"type":"PermissionDenied"}\n\n`,
+      `data: {"body":{"message":"Custom error","errorType":"PermissionDenied","provider":"grok"},"message":"Custom error","type":"PermissionDenied"}\n\n`,
     ]);
   });
 

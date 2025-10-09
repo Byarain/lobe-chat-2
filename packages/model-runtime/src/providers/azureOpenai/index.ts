@@ -1,4 +1,5 @@
 import debug from 'debug';
+import { ModelProvider } from 'model-bank';
 import OpenAI, { AzureOpenAI } from 'openai';
 import type { Stream } from 'openai/streaming';
 
@@ -12,7 +13,6 @@ import {
   Embeddings,
   EmbeddingsOptions,
   EmbeddingsPayload,
-  ModelProvider,
 } from '../../types';
 import { AgentRuntimeErrorType } from '../../types/error';
 import { CreateImagePayload, CreateImageResponse } from '../../types/image';
@@ -20,6 +20,7 @@ import { AgentRuntimeError } from '../../utils/createError';
 import { debugStream } from '../../utils/debugStream';
 import { convertImageUrlToFile, convertOpenAIMessages } from '../../utils/openaiHelpers';
 import { StreamingResponse } from '../../utils/response';
+import { sanitizeError } from '../../utils/sanitizeError';
 
 const azureImageLogger = debug('lobe-image:azure');
 export class LobeAzureOpenAI implements LobeRuntimeAI {
@@ -96,9 +97,12 @@ export class LobeAzureOpenAI implements LobeRuntimeAI {
         });
       } else {
         const stream = transformResponseToStream(response as OpenAI.ChatCompletion);
-        return StreamingResponse(OpenAIStream(stream, { callbacks: options?.callback }), {
-          headers: options?.headers,
-        });
+        return StreamingResponse(
+          OpenAIStream(stream, { callbacks: options?.callback, enableStreaming: false }),
+          {
+            headers: options?.headers,
+          },
+        );
       }
     } catch (e) {
       return this.handleError(e, model);
@@ -250,9 +254,12 @@ export class LobeAzureOpenAI implements LobeRuntimeAI {
       ? AgentRuntimeErrorType.ProviderBizError
       : AgentRuntimeErrorType.AgentRuntimeError;
 
+    // Sanitize error to remove sensitive information like API keys from headers
+    const sanitizedError = sanitizeError(error);
+
     throw AgentRuntimeError.chat({
       endpoint: this.maskSensitiveUrl(this.baseURL),
-      error,
+      error: sanitizedError,
       errorType,
       provider: ModelProvider.Azure,
     });

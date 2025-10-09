@@ -1,12 +1,11 @@
-import { openrouter as OpenRouterModels } from 'model-bank';
+import { ModelProvider, openrouter as OpenRouterModels } from 'model-bank';
 
 import { createOpenAICompatibleRuntime } from '../../core/openaiCompatibleFactory';
-import { ModelProvider } from '../../types';
 import { processMultiProviderModelList } from '../../utils/modelParse';
 import { OpenRouterModelCard, OpenRouterReasoning } from './type';
 
-const formatPrice = (price: string) => {
-  if (price === '-1') return undefined;
+const formatPrice = (price?: string) => {
+  if (price === undefined || price === '-1') return undefined;
   return Number((Number(price) * 1e6).toPrecision(5));
 };
 
@@ -74,11 +73,21 @@ export const LobeOpenRouterAI = createOpenAICompatibleRuntime({
       const { endpoint } = model;
       const endpointModel = endpoint?.model;
 
-      const displayName = model.slug?.toLowerCase().includes('deepseek')
+      const inputModalities = endpointModel?.input_modalities || model.input_modalities;
+
+      let displayName = model.slug?.toLowerCase().includes('deepseek') && !model.short_name?.toLowerCase().includes('deepseek')
         ? (model.name ?? model.slug)
         : (model.short_name ?? model.name ?? model.slug);
 
-      const inputModalities = endpointModel?.input_modalities || model.input_modalities;
+      const inputPrice = formatPrice(endpoint?.pricing?.prompt);
+      const outputPrice = formatPrice(endpoint?.pricing?.completion);
+      const cachedInputPrice = formatPrice(endpoint?.pricing?.input_cache_read);
+      const writeCacheInputPrice = formatPrice(endpoint?.pricing?.input_cache_write);
+
+      const isFree = (inputPrice === 0 || outputPrice === 0) && !displayName.endsWith('(free)');
+      if (isFree) {
+        displayName += ' (free)';
+      }
 
       return {
         contextWindowTokens: endpoint?.context_length || model.context_length,
@@ -91,8 +100,10 @@ export const LobeOpenRouterAI = createOpenAICompatibleRuntime({
             ? endpoint.max_completion_tokens
             : undefined,
         pricing: {
-          input: formatPrice(endpoint?.pricing?.prompt),
-          output: formatPrice(endpoint?.pricing?.completion),
+          input: inputPrice,
+          cachedInput: cachedInputPrice,
+          writeCacheInput: writeCacheInputPrice,
+          output: outputPrice,
         },
         reasoning: endpoint?.supports_reasoning || false,
         releasedAt: new Date(model.created_at).toISOString().split('T')[0],
