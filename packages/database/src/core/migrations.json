@@ -676,5 +676,17 @@
     "bps": true,
     "folderMillis": 1760086906862,
     "hash": "4bdc6505797d7a33b622498c138cfd47f637239f6905e1c484cd01d9d5f21d6b"
+  },
+  {
+    "sql": ["ALTER TABLE \"user_settings\" ADD COLUMN IF NOT EXISTS \"image\" jsonb;"],
+    "bps": true,
+    "folderMillis": 1760108430562,
+    "hash": "ce09b301abb80f6563abc2f526bdd20b4f69bae430f09ba2179b9e3bfec43067"
+  },
+  {
+    "sql": ["ALTER TABLE \"documents\" ADD COLUMN IF NOT EXISTS \"editor_data\" jsonb;"],
+    "bps": true,
+    "folderMillis": 1761554153406,
+    "hash": "bf2f21293e90e11cf60a784cf3ec219eafa95f7545d7d2f9d1449c0b0949599a"
   }
 ]

@@ -1,17 +1,20 @@
+import {
+  DEFAULT_INBOX_AVATAR,
+  LOADING_FLAT,
+  PLUGIN_SCHEMA_API_MD5_PREFIX,
+  PLUGIN_SCHEMA_SEPARATOR,
+} from '@lobechat/const';
+import { ToolNameResolver } from '@lobechat/context-engine';
+import { ChatToolPayload, MessageToolCall, UIChatMessage } from '@lobechat/types';
 import { act, renderHook } from '@testing-library/react';
 import { Mock, afterEach, describe, expect, it, vi } from 'vitest';
 
-import { LOADING_FLAT } from '@/const/message';
-import { DEFAULT_INBOX_AVATAR } from '@/const/meta';
-import { PLUGIN_SCHEMA_API_MD5_PREFIX, PLUGIN_SCHEMA_SEPARATOR } from '@/const/plugin';
 import { chatService } from '@/services/chat';
 import { messageService } from '@/services/message';
 import { chatSelectors } from '@/store/chat/selectors';
 import { useChatStore } from '@/store/chat/store';
 import { messageMapKey } from '@/store/chat/utils/messageMapKey';
 import { useToolStore } from '@/store/tool';
-import { ChatMessage, ChatToolPayload, MessageToolCall } from '@/types/message';
-import { genToolCallShortMD5Hash } from '@/utils/toolCall';
 
 const invokeStandaloneTypePlugin = useChatStore.getState().invokeStandaloneTypePlugin;
 
@@ -40,7 +43,7 @@ describe('ChatPluginAction', () => {
         id: messageId,
         role: 'tool',
         content: 'Tool content to summarize',
-      } as ChatMessage;
+      } as UIChatMessage;
 
       const internal_coreProcessMessageMock = vi.fn();
 
@@ -88,7 +91,7 @@ describe('ChatPluginAction', () => {
         id: messageId,
         role: 'user',
         content: 'User message',
-      } as ChatMessage;
+      } as UIChatMessage;
 
       const internal_coreProcessMessageMock = vi.fn();
 
@@ -326,7 +329,7 @@ describe('ChatPluginAction', () => {
             arguments: '{}',
           },
         ],
-      } as ChatMessage;
+      } as UIChatMessage;
 
       const invokeStandaloneTypePluginMock = vi.fn();
       const invokeMarkdownTypePluginMock = vi.fn();
@@ -420,7 +423,7 @@ describe('ChatPluginAction', () => {
             arguments: '{}',
           },
         ],
-      } as ChatMessage;
+      } as UIChatMessage;
 
       const invokeStandaloneTypePluginMock = vi.fn();
       const invokeMarkdownTypePluginMock = vi.fn();
@@ -818,7 +821,7 @@ describe('ChatPluginAction', () => {
           arguments: '{}',
         },
         tool_call_id: 'tool-id',
-      } as ChatMessage;
+      } as UIChatMessage;
 
       const internal_invokeDifferentTypePluginMock = vi.fn();
       act(() => {
@@ -856,7 +859,7 @@ describe('ChatPluginAction', () => {
         },
         tool_call_id: 'tool-id',
         pluginError: { message: 'Previous error', type: 'ProviderBizError' },
-      } as ChatMessage;
+      } as UIChatMessage;
 
       const internal_updateMessageErrorMock = vi.fn();
 
@@ -894,14 +897,14 @@ describe('ChatPluginAction', () => {
         plugin: { identifier: identifier, arguments: '{"oldKey":"oldValue"}' },
         tool_call_id: toolCallId,
         parentId,
-      } as ChatMessage;
+      } as UIChatMessage;
 
       const assistantMessage = {
         id: parentId,
         role: 'assistant',
         content: 'Assistant content',
         tools: [{ identifier: identifier, arguments: '{"oldKey":"oldValue"}', id: toolCallId }],
-      } as ChatMessage;
+      } as UIChatMessage;
 
       act(() => {
         useChatStore.setState({
@@ -1045,7 +1048,16 @@ describe('ChatPluginAction', () => {
 
     it('should handle MD5 hashed API names', () => {
       const apiName = 'testApi';
-      const md5Hash = genToolCallShortMD5Hash(apiName);
+      const resolver = new ToolNameResolver();
+      // Generate a very long name to force MD5 hashing
+      const longApiName =
+        'very-long-action-name-that-will-cause-the-total-length-to-exceed-64-characters';
+      const toolName = resolver.generate('plugin1', longApiName, 'default');
+
+      // Extract the MD5 part from the generated name
+      const parts = toolName.split(PLUGIN_SCHEMA_SEPARATOR);
+      const md5Hash = parts[1].replace(PLUGIN_SCHEMA_API_MD5_PREFIX, '');
+
       const toolCalls: MessageToolCall[] = [
         {
           id: 'tool1',
@@ -1069,7 +1081,7 @@ describe('ChatPluginAction', () => {
                 identifier: 'plugin1',
                 api: [
                   {
-                    name: apiName,
+                    name: longApiName,
                     parameters: { type: 'object', properties: {} },
                     description: 'abc',
                   },
@@ -1085,7 +1097,7 @@ describe('ChatPluginAction', () => {
 
       const transformed = result.current.internal_transformToolCalls(toolCalls);
 
-      expect(transformed[0].apiName).toBe(apiName);
+      expect(transformed[0].apiName).toBe(longApiName);
     });
   });
 
@@ -1129,7 +1141,7 @@ describe('ChatPluginAction', () => {
         role: 'assistant',
         content: 'Assistant content',
         tools: [{ identifier: identifier, arguments: '{"oldKey":"oldValue"}', id: toolCallId }],
-      } as ChatMessage;
+      } as UIChatMessage;
 
       act(() => {
         useChatStore.setState({
